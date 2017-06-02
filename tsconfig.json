@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "target": "es5",
+    "sourceMap": false,
+    "lib": [
+      "ES2015.Core",
+      "ES2015.Iterable",
+      "ES2015.Promise",
+      "DOM",
+      "ES5",
+      "ScriptHost"
+    ],
+    "jsx": "react",
+    "importHelpers": true
+//    "noUnusedLocals": true
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
