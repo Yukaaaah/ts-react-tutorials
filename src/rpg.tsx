@@ -5,7 +5,7 @@ import * as ReactDom from "react-dom";
 export function renderRpg() {
   // 2-1. state
   // 2-2~4. functionの設定
-  // "その要素に属性があったら、一つ目の引数として渡される。"とはこれのこと？
+  // その要素に属性(props)があれば、渡す
   ReactDom.render(<Rpg
       state={rpgState}
       onSetName={handleSetName}
@@ -14,10 +14,35 @@ export function renderRpg() {
   />, document.getElementById("content"));
 }
 
+// propsの定義1 -> ReactDom.renderで一緒に呼ばれているもの
+interface RpgProps {
+    state: RpgState
+    onSetName: () => void
+    onChangeName: (event: React.FormEvent) => void
+    onSelectAction: (action: string) => void
+}
+
+// propsの設定2
+interface CharacterViewProps {
+    name: string
+    hp: number
+    maxHp: number
+    image: string
+    left?: boolean
+    right?: boolean
+}
+
+// propr設定3
+interface ActionButtonProps {
+    onSelectAction: (action: string) => void
+    actionName: string
+}
+
+
 //　2. renderRpg()はこれ
 function Rpg(props: RpgProps) {
+    //  名前入れる最初の画面 -> まだ名前を入力していなかったら。
   if (props.state.isNamingCharacter) {
-    //  名前入れる最初の画面
     return <Container>
       <div>
         Name your character: <input className="mr3"
@@ -29,7 +54,7 @@ function Rpg(props: RpgProps) {
     </Container>
   }
 
-  // 次のバトルシーンの画面。
+  // 次のバトルシーンの画面
   return <Container>
     <div className="cf">
       <BattleScene state={props.state}/>
@@ -48,7 +73,7 @@ function Rpg(props: RpgProps) {
 }
 
 // RpgStateを元に、上で呼ばれた、メインの戦う画面のHTMLを作る
-// props: ってプロパティを渡しているだけかな？
+// props: ってプロパティを渡しているだけのようす
 function BattleScene(props: { state: RpgState }) {
   return <div>
     <CharacterView
@@ -79,9 +104,8 @@ function ActionButton(props: ActionButtonProps) {
   </div>
 }
 
-
 // コンポーネントを呼ぶための変数の型の定義？
-// 2-1. stateの定義 => 初期値。
+// 2-1. stateの定義 => 初期値。ここではinterfaceで定義せず直接letで設定しているのは何か意味がある？？
 let rpgState = {
   isNamingCharacter: true,
 
@@ -97,25 +121,11 @@ let rpgState = {
   activityLog: [] as string[]
 };
 
-// rpgStateのデータ型をそのまま使う。 -> クラスからオブジェクト作ったみたいな感じ？？
+// rpgStateのデータ型をそのまま使う。 -> クラスから,このpgm実行時に使うオブジェクト作ったみたいな感じ？
 type RpgState = typeof rpgState;
 
-interface RpgProps {
-  state: RpgState
-  onSetName: () => void
-  onChangeName: (event: React.FormEvent) => void
-  onSelectAction: (action: string) => void
-}
 
-interface CharacterViewProps {
-  name: string
-  hp: number
-  maxHp: number
-  image: string
-  left?: boolean
-  right?: boolean
-}
-
+//　
 function CharacterView(props: CharacterViewProps) {
   let inner = <div className="w5 pa2 ba b--black tc">
     <div>
@@ -157,62 +167,78 @@ function Container(props: { children?: React.ReactNode }) {
 }
 
 
-interface ActionButtonProps {
-  onSelectAction: (action: string) => void
-  actionName: string
-}
-
-
-// 2-2.
+// 2-2. onSetName
 function handleSetName() {
   rpgState.isNamingCharacter = false;
   renderRpg();
 }
 
-//　2-3.
+//　2-3. onChangeName
 function handleChangeName(event: React.FormEvent) {
   let input = event.target as HTMLInputElement;
   rpgState.allyName = input.value;
   renderRpg();
 }
 
-// 2-4.
+// 2-4.　onSelectAction
 function handleSelectAction(action: string) {
-  if (action === "Attack") {
-    let damage = randomNumber(20, 50);
-    rpgState.activityLog.push("You dealt " + damage + " damage with your attack!");
-    rpgState.enemyHp -= damage;
-  }
+    if (rpgState.allyHp > 0 && rpgState.enemyHp > 0) {
+        if (action === "Attack") {
+            let damage = randomNumber(20, 50);
+            rpgState.activityLog.push("You dealt " + damage + " damage with your attack!");
+            rpgState.enemyHp -= damage;
+        }
 
-  if (action === "Fire") {
-    let damage = randomNumber(30, 40);
-    rpgState.activityLog.push("You dealt " + damage + " damage with your Fire spell!");
-    rpgState.enemyHp -= damage;
-  }
+        if (action === "Fire") {
+            let damage = randomNumber(30, 40);
+            rpgState.activityLog.push("You dealt " + damage + " damage with your Fire spell!");
+            rpgState.enemyHp -= damage;
+        }
 
-  if (action === "Cure") {
-    let cure = randomNumber(20, 80);
-    rpgState.activityLog.push("You cured " + cure + " HP with your Cure spell!");
-    rpgState.allyHp += cure;
+        if (action === "Cure") {
+            let cure = randomNumber(20, 80);
+            rpgState.activityLog.push("You cured " + cure + " HP with your Cure spell!");
+            rpgState.allyHp += cure;
 
-    if (rpgState.allyHp > rpgState.allyMaxHp) {
-      rpgState.allyHp = rpgState.allyMaxHp;
+            if (rpgState.allyHp > rpgState.allyMaxHp) {
+                rpgState.allyHp = rpgState.allyMaxHp;
+            }
+        }
+
+    if (rpgState.allyHp < 0 ) {
+        rpgState.allyHp = 0;
+        rpgState.activityLog.push("Game Over");
+        renderRpg();
+    } else {
+        if (rpgState.enemyHp < 0) {
+            rpgState.enemyHp = 0;
+            rpgState.activityLog.push("You win!");
+            renderRpg();
+        } else {
+            enemyTurn();
+            renderRpg();
+        }
     }
-  }
-
-  enemyTurn();
-
-  renderRpg();
+    } else {
+        renderRpg();
+    }
 }
 
 
 function enemyTurn() {
-  let damage = randomNumber(1, 20);
-  rpgState.activityLog.push("The enemy dealt " + damage + " to you!");
-  rpgState.allyHp -= damage;
+    if (rpgState.enemyHp > 0) {
+      let damage = randomNumber(1, 20);
+      rpgState.activityLog.push("The enemy dealt " + damage + " to you!");
+      rpgState.allyHp -= damage;
+
+      if (rpgState.allyHp <0) {
+          rpgState.allyHp = 0;
+          rpgState.activityLog.push("Game Over");
+          renderRpg();
+      }
+    }
 }
 
 function randomNumber(low: number, high: number) {
   return Math.floor(Math.random() * (high - low + 1)) + low;
 }
-
