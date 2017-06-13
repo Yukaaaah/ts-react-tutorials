@@ -75,22 +75,65 @@ function Rpg(props: RpgProps) {
 // RpgStateを元に、上で呼ばれた、メインの戦う画面のHTMLを作る
 // props: ってプロパティを渡しているだけのようす
 function BattleScene(props: { state: RpgState }) {
-  return <div>
-    <CharacterView
-        left
-        image="https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310"
-        name={props.state.allyName}
-        hp={props.state.allyHp}
-        maxHp={props.state.allyMaxHp}/>
+    if (rpgState.buttleTimes === 0) {
+        return <div>
+            <CharacterView
+                left
+                image="https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310"
+                name={props.state.allyName}
+                hp={props.state.allyHp}
+                maxHp={props.state.allyMaxHp}/>
 
-    <CharacterView
-        right
-        image="https://s-media-cache-ak0.pinimg.com/originals/0a/a0/08/0aa00800bf6065938a3b9455883c3dea.gif"
-        name={props.state.enemyName}
-        hp={props.state.enemyHp}
-        maxHp={props.state.enemyMaxHp}
-    />
-  </div>
+            <CharacterView
+                right
+                image="https://s-media-cache-ak0.pinimg.com/originals/0a/a0/08/0aa00800bf6065938a3b9455883c3dea.gif"
+                name={props.state.enemyName}
+                hp={props.state.enemyHp}
+                maxHp={props.state.enemyMaxHp}
+            />
+        </div>
+    }
+    if (rpgState.buttleTimes === 1) {
+        rpgState.activityLog = [];
+
+        return <div>
+            <CharacterView
+                left
+                image="https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310"
+                name={props.state.allyName}
+                hp={props.state.allyHp}
+                maxHp={props.state.allyMaxHp}/>
+
+            <CharacterView
+                right
+                image="https://img.lancers.jp/proposal/8/7/873c2510fcb9220cbe7f54cb04d4f953e96c5e4d90fae703e528986fcb31c896_1863633_450_2328267.jpg?20130310081146"
+                name={props.state.enemyName}
+                hp={props.state.enemyHp}
+                maxHp={props.state.enemyMaxHp}
+            />
+        </div>
+
+    }
+    if (rpgState.buttleTimes === 2) {
+        return <div>
+            <CharacterView
+                left
+                image="https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310"
+                name={props.state.allyName}
+                hp={props.state.allyHp}
+                maxHp={props.state.allyMaxHp}/>
+
+            <CharacterView
+                right
+                image="https://s-media-cache-ak0.pinimg.com/originals/0a/a0/08/0aa00800bf6065938a3b9455883c3dea.gif"
+                name={props.state.enemyName}
+                hp={props.state.enemyHp}
+                maxHp={props.state.enemyMaxHp}
+            />
+        </div>
+
+    }
+
 }
 
 // 上で呼ばれたActtionButton作る
@@ -118,10 +161,12 @@ let rpgState = {
   allyMaxHp: 50,
 
   isEnemyTurn: false,
-  activityLog: [] as string[]
+  activityLog: [] as string[],
+
+  buttleTimes: 0,
 };
 
-// rpgStateのデータ型をそのまま使う。 -> クラスから,このpgm実行時に使うオブジェクト作ったみたいな感じ？
+// Rpgstateはtypeで、rpgStateのデータ型をそのまま使う。（型推測）
 type RpgState = typeof rpgState;
 
 
@@ -183,16 +228,15 @@ function handleChangeName(event: React.FormEvent) {
 // 2-4.　onSelectAction
 function handleSelectAction(action: string) {
     if (rpgState.allyHp > 0 && rpgState.enemyHp > 0) {
+        let damage = 0;
         if (action === "Attack") {
-            let damage = randomNumber(20, 50);
-            rpgState.activityLog.push("You dealt " + damage + " damage with your attack!");
-            rpgState.enemyHp -= damage;
+            damage = randomNumber(20, 50);
+            dealEnemyDamage(rpgState, damage, "attack");
         }
 
         if (action === "Fire") {
-            let damage = randomNumber(30, 40);
-            rpgState.activityLog.push("You dealt " + damage + " damage with your Fire spell!");
-            rpgState.enemyHp -= damage;
+            damage = randomNumber(30, 40);
+            dealEnemyDamage(rpgState, damage, "fire");
         }
 
         if (action === "Cure") {
@@ -213,6 +257,8 @@ function handleSelectAction(action: string) {
         if (rpgState.enemyHp < 0) {
             rpgState.enemyHp = 0;
             rpgState.activityLog.push("You win!");
+
+            rpgState.buttleTimes += 1;
             renderRpg();
         } else {
             enemyTurn();
@@ -224,6 +270,12 @@ function handleSelectAction(action: string) {
     }
 }
 
+function dealEnemyDamage(rpgState: RpgState,
+                         damage: number,
+                         attackDescription: string) {
+        rpgState.activityLog.push("You dealt " + damage + " damage with your " + attackDescription + "!");
+        rpgState.enemyHp -= damage;
+}
 
 function enemyTurn() {
     if (rpgState.enemyHp > 0) {
