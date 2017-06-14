@@ -3,7 +3,9 @@ import * as ReactDom from "react-dom";
 
 //　1. documentの読み込みが終わったらここへ。
 export function renderRpg() {
-  // 2-1. state
+    // 初期値は、どこでも置けるみたい
+    rpgState.currentEnemy = rpgState.enemies[rpgState.buttleTimes % rpgState.enemies.length]
+    // 2-1. state
   // 2-2~4. functionの設定
   // その要素に属性(props)があれば、渡す
   ReactDom.render(<Rpg
@@ -36,6 +38,14 @@ interface CharacterViewProps {
 interface ActionButtonProps {
     onSelectAction: (action: string) => void
     actionName: string
+}
+
+// enemy
+interface Enemy {
+    name: string,
+    maxHp: number,
+    hp: number,
+    image: string,
 }
 
 
@@ -72,10 +82,9 @@ function Rpg(props: RpgProps) {
   </Container>
 }
 
-// RpgStateを元に、上で呼ばれた、メインの戦う画面のHTMLを作る
-// props: ってプロパティを渡しているだけのようす
+// RpgStateを元に、上で呼ばれた、メインの戦う画面のHTMLのコンポーネントを作る
+// props: プロパティを渡しているだけ
 function BattleScene(props: { state: RpgState }) {
-    if (rpgState.buttleTimes === 0) {
         return <div>
             <CharacterView
                 left
@@ -86,53 +95,12 @@ function BattleScene(props: { state: RpgState }) {
 
             <CharacterView
                 right
-                image="https://s-media-cache-ak0.pinimg.com/originals/0a/a0/08/0aa00800bf6065938a3b9455883c3dea.gif"
-                name={props.state.enemyName}
-                hp={props.state.enemyHp}
-                maxHp={props.state.enemyMaxHp}
+                image={props.state.currentEnemy.image}
+                name={props.state.enemies[rpgState.buttleTimes].name}
+                hp={props.state.enemies[rpgState.buttleTimes].hp}
+                maxHp={props.state.enemies[rpgState.buttleTimes].maxHp}
             />
         </div>
-    }
-    if (rpgState.buttleTimes === 1) {
-        rpgState.activityLog = [];
-
-        return <div>
-            <CharacterView
-                left
-                image="https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310"
-                name={props.state.allyName}
-                hp={props.state.allyHp}
-                maxHp={props.state.allyMaxHp}/>
-
-            <CharacterView
-                right
-                image="https://img.lancers.jp/proposal/8/7/873c2510fcb9220cbe7f54cb04d4f953e96c5e4d90fae703e528986fcb31c896_1863633_450_2328267.jpg?20130310081146"
-                name={props.state.enemyName}
-                hp={props.state.enemyHp}
-                maxHp={props.state.enemyMaxHp}
-            />
-        </div>
-
-    }
-    if (rpgState.buttleTimes === 2) {
-        return <div>
-            <CharacterView
-                left
-                image="https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310"
-                name={props.state.allyName}
-                hp={props.state.allyHp}
-                maxHp={props.state.allyMaxHp}/>
-
-            <CharacterView
-                right
-                image="https://s-media-cache-ak0.pinimg.com/originals/0a/a0/08/0aa00800bf6065938a3b9455883c3dea.gif"
-                name={props.state.enemyName}
-                hp={props.state.enemyHp}
-                maxHp={props.state.enemyMaxHp}
-            />
-        </div>
-
-    }
 
 }
 
@@ -148,22 +116,32 @@ function ActionButton(props: ActionButtonProps) {
 }
 
 // コンポーネントを呼ぶための変数の型の定義？
-// 2-1. stateの定義 => 初期値。ここではinterfaceで定義せず直接letで設定しているのは何か意味がある？？
+// 2-1. stateの定義 => 初期値。
 let rpgState = {
   isNamingCharacter: true,
-
-  enemyName: "Bad Guy",
-  enemyMaxHp: 200,
-  enemyHp: 200,
+  enemies: [
+      {name: "Bad Guy",
+       hp: 200,
+       maxHp: 200,
+       image: "https://s-media-cache-ak0.pinimg.com/originals/0a/a0/08/0aa00800bf6065938a3b9455883c3dea.gif"},
+      {name: "Boss",
+       hp: 500,
+       maxHp: 500,
+       image: "https://img.lancers.jp/proposal/8/7/873c2510fcb9220cbe7f54cb04d4f953e96c5e4d90fae703e528986fcb31c896_1863633_450_2328267.jpg?20130310081146"}
+  ] as Enemy[],
 
   allyName: "You",
   allyHp: 50,
   allyMaxHp: 50,
 
+  //state同士だと呼べない様子
+  currentEnemy: null as Enemy,
+
   isEnemyTurn: false,
   activityLog: [] as string[],
 
   buttleTimes: 0,
+  onNextEnemy: false,
 };
 
 // Rpgstateはtypeで、rpgStateのデータ型をそのまま使う。（型推測）
@@ -201,6 +179,7 @@ function CharacterView(props: CharacterViewProps) {
   return inner;
 }
 
+// nanikore!!
 function Container(props: { children?: React.ReactNode }) {
   return <div className="vh-100 dt w-100">
     <div className="h-50 dtc v-mid cf">
@@ -227,7 +206,8 @@ function handleChangeName(event: React.FormEvent) {
 
 // 2-4.　onSelectAction
 function handleSelectAction(action: string) {
-    if (rpgState.allyHp > 0 && rpgState.enemyHp > 0) {
+
+    if (rpgState.allyHp > 0 && rpgState.currentEnemy.hp > 0) {
         let damage = 0;
         if (action === "Attack") {
             damage = randomNumber(20, 50);
@@ -254,11 +234,16 @@ function handleSelectAction(action: string) {
         rpgState.activityLog.push("Game Over");
         renderRpg();
     } else {
-        if (rpgState.enemyHp < 0) {
-            rpgState.enemyHp = 0;
+        if (rpgState.currentEnemy.hp < 0) {
+            rpgState.currentEnemy.hp = 0;
             rpgState.activityLog.push("You win!");
 
+        //　次の敵へ
             rpgState.buttleTimes += 1;
+            rpgState.currentEnemy = rpgState.enemies[rpgState.buttleTimes % rpgState.enemies.length];
+            rpgState.currentEnemy.hp = rpgState.currentEnemy.maxHp;
+            rpgState.allyHp = rpgState.allyMaxHp;
+            rpgState.activityLog = [];
             renderRpg();
         } else {
             enemyTurn();
@@ -274,11 +259,11 @@ function dealEnemyDamage(rpgState: RpgState,
                          damage: number,
                          attackDescription: string) {
         rpgState.activityLog.push("You dealt " + damage + " damage with your " + attackDescription + "!");
-        rpgState.enemyHp -= damage;
+        rpgState.currentEnemy.hp -= damage;
 }
 
 function enemyTurn() {
-    if (rpgState.enemyHp > 0) {
+    if (rpgState.currentEnemy.hp > 0) {
       let damage = randomNumber(1, 20);
       rpgState.activityLog.push("The enemy dealt " + damage + " to you!");
       rpgState.allyHp -= damage;
@@ -294,3 +279,4 @@ function enemyTurn() {
 function randomNumber(low: number, high: number) {
   return Math.floor(Math.random() * (high - low + 1)) + low;
 }
+
