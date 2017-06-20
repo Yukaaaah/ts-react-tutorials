@@ -12,6 +12,7 @@ export function renderRpg() {
       state={rpgState}
       onSetName={handleSetName}
       onChangeName={handleChangeName}
+      onChangeCharactor={handleChangeCharactor}
       onSelectAction={handleSelectAction}
   />, document.getElementById("content"));
 }
@@ -21,6 +22,7 @@ interface RpgProps {
     state: RpgState
     onSetName: () => void
     onChangeName: (event: React.FormEvent) => void
+    onChangeCharactor: (event: React.FormEvent) => void
     onSelectAction: (action: string) => void
 }
 
@@ -48,15 +50,42 @@ interface Enemy {
     image: string,
 }
 
+// 自分のキャラクターの設定
+interface CharacterData {
+    image: string
+    maxHp: number
+}
+
+const charactersData: {[k: number]: CharacterData} = {
+    1: {
+        image: "https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310",
+        maxHp: 200,
+    },
+    2: {
+        image: "",
+        maxHp: 250
+    }
+};
+
+
 
 //　2. renderRpg()はこれ
 function Rpg(props: RpgProps) {
     //  名前入れる最初の画面 -> まだ名前を入力していなかったら。
+  　//  同じ画面でキャラクター選択、オンクリックでキャラクターID、名前を渡す
   if (props.state.isNamingCharacter) {
     return <Container>
       <div>
         Name your character: <input className="mr3"
                                     onChange={props.onChangeName}/>
+        <div>
+        Select your character:
+          <input type="radio" name="ChooseCharactor" value={"1"}
+                 onChange={props.onChangeCharactor} /> Chara1
+          <input type="radio" name="ChooseCharactor" value={"2"}
+                 onChange={props.onChangeCharactor} />  Chara2
+        </div>
+
         <button className="" onClick={props.onSetName}>
           Ready!
         </button>
@@ -88,7 +117,7 @@ function BattleScene(props: { state: RpgState }) {
         return <div>
             <CharacterView
                 left
-                image="https://vignette3.wikia.nocookie.net/8bittheater/images/0/0d/Red_Mage_Mime.jpg/revision/latest/scale-to-width-down/177?cb=20091020173310"
+                image={props.state.allyImage}
                 name={props.state.allyName}
                 hp={props.state.allyHp}
                 maxHp={props.state.allyMaxHp}/>
@@ -115,9 +144,18 @@ function ActionButton(props: ActionButtonProps) {
   </div>
 }
 
+//　Clear画面
+function EndingScene(){
+    return <div>
+        Conguraturation!<br/>
+        You cleared this Game!!
+    </div>
+}
+
 // コンポーネントを呼ぶための変数の型の定義？
 // 2-1. stateの定義 => 初期値。
 let rpgState = {
+
   isNamingCharacter: true,
   enemies: [
       {name: "Bad Guy",
@@ -130,9 +168,11 @@ let rpgState = {
        image: "https://img.lancers.jp/proposal/8/7/873c2510fcb9220cbe7f54cb04d4f953e96c5e4d90fae703e528986fcb31c896_1863633_450_2328267.jpg?20130310081146"}
   ] as Enemy[],
 
+  allyId: 1,
   allyName: "You",
   allyHp: 50,
   allyMaxHp: 50,
+  allyImage: "",
 
   //state同士だと呼べない様子
   currentEnemy: null as Enemy,
@@ -148,7 +188,7 @@ let rpgState = {
 type RpgState = typeof rpgState;
 
 
-//　
+//　コンポーネント化された中身がこれ？①
 function CharacterView(props: CharacterViewProps) {
   let inner = <div className="w5 pa2 ba b--black tc">
     <div>
@@ -179,7 +219,7 @@ function CharacterView(props: CharacterViewProps) {
   return inner;
 }
 
-// nanikore!!
+//　コンポーネント化された中身がこれ？②
 function Container(props: { children?: React.ReactNode }) {
   return <div className="vh-100 dt w-100">
     <div className="h-50 dtc v-mid cf">
@@ -194,6 +234,9 @@ function Container(props: { children?: React.ReactNode }) {
 // 2-2. onSetName
 function handleSetName() {
   rpgState.isNamingCharacter = false;
+  let character = charactersData[rpgState.allyId];
+  rpgState.allyMaxHp = rpgState.allyHp = character.maxHp;
+  rpgState.allyImage = character.image;
   renderRpg();
 }
 
@@ -202,6 +245,11 @@ function handleChangeName(event: React.FormEvent) {
   let input = event.target as HTMLInputElement;
   rpgState.allyName = input.value;
   renderRpg();
+}
+
+function handleChangeCharactor(event: React.FormEvent){
+    let checked = event.target as HTMLInputElement;
+    rpgState.allyId = +checked.value;
 }
 
 // 2-4.　onSelectAction
